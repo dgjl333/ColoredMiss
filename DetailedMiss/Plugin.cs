@@ -88,17 +88,34 @@ namespace DetailedMiss
             flyingSpriteEffect.transform.localPosition = pos;
             pos = Quaternion.Inverse(rotation) * pos;
 
-            Color myColor = Color.green;
+            Color myColor = Color.white;
             if (inverseRotation == Quaternion.Euler(Vector3.forward))
             {
-                myColor = Color.red;
+                myColor = MyColors.ColorA;
             }
             else if(inverseRotation == Quaternion.Euler(Vector3.back))
             {
-                myColor = Color.blue;
+                myColor = MyColors.ColorB;
             }
                 flyingSpriteEffect.InitAndPresent(targetPos: rotation * new Vector3(Mathf.Sign(pos.x) * ____xSpread, ____targetYPos, ____targetZPos), duration: ____duration, rotation: rotation, sprite: ____sprite, material: ____material, color: myColor, shake: ____shake);
             return false;
         }
+    }
+
+    [HarmonyPatch(typeof(ColorManager), "SetColorScheme")]
+    public class ColorManager_SetColorScheme_Patch
+    {
+        public static void Postfix(ColorScheme ____colorScheme)
+        {
+            MyColors.ColorA = ____colorScheme.saberAColor;
+            MyColors.ColorB = ____colorScheme.saberBColor;
+        }
+    }
+
+
+    public static class MyColors
+    {
+        public static Color ColorA;
+        public static Color ColorB;
     }
 }
