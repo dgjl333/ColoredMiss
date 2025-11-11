@@ -4,7 +4,7 @@
   "name": "ColoredMiss",
   "author": "DG3",
   "version": "1.0.0",
-  "description": "Makes the \"MISS\" text use the color of the missed note.",
+  "description": "Makes \"MISS\" text use the color of the missed note.",
   "gameVersion": "1.40.8",
   "dependsOn": {
     "BSIPA": "^4.2.0"
