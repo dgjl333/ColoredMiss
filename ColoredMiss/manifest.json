@@ -1,10 +1,10 @@
 ﻿{
   "$schema": "https://raw.githubusercontent.com/bsmg/BSIPA-MetadataFileSchema/master/Schema.json",
-  "id": "DetailedMiss",
-  "name": "DetailedMiss",
+  "id": "ColoredMiss",
+  "name": "ColoredMiss",
   "author": "dg3",
   "version": "0.0.1",
-  "description": "",
+  "description": "Allows miss text appear in the color of the saber you missed with.",
   "gameVersion": "1.18.3",
   "dependsOn": {
     "BSIPA": "^4.2.0"

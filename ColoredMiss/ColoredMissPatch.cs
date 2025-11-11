@@ -1,66 +1,10 @@
 ﻿using HarmonyLib;
-using IPA;
-using IPA.Config;
-using IPA.Config.Stores;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using IPALogger = IPA.Logging.Logger;
 
-
-namespace DetailedMiss
+namespace ColoredMiss
 {
-
-    [Plugin(RuntimeOptions.SingleStartInit)]
-    public class Plugin
-    {
-        internal static Plugin Instance { get; private set; }
-        internal static IPALogger Log { get; private set; }
-        private Harmony harmony;
-        private Assembly executingAssembly = Assembly.GetExecutingAssembly();
-
-
-        [Init]
-        public void Init(IPALogger logger)
-        {
-            harmony = new Harmony(nameof(DetailedMiss));
-            Instance = this;
-            Log = logger;
-        }
-
-        #region BSIPA Config
-        //Uncomment to use BSIPA's config
-        /*
-        [Init]
-        public void InitWithConfig(Config conf)
-        {
-            Configuration.PluginConfig.Instance = conf.Generated<Configuration.PluginConfig>();
-            Log.Debug("Config loaded");
-        }
-        */
-        #endregion
-
-        [OnStart]
-        public void OnApplicationStart()
-        {
-            Log.Debug("DetailedMiss-OnApplicationStart");
-            harmony.PatchAll(executingAssembly);
-
-        }
-
-        [OnExit]
-        public void OnApplicationQuit()
-        {
-            harmony.UnpatchAll(nameof(DetailedMiss));
-
-        }
-    }
     [HarmonyPatch(typeof(MissedNoteEffectSpawner), "HandleNoteWasMissed")]
-    public class MissedNoteEffectSpawner_HandleNoteWasMissed_Patch
+    internal class MissedNoteEffectSpawner_HandleNoteWasMissed_Patch
     {
         public static bool Prefix(NoteController noteController, AudioTimeSyncController ____audioTimeSyncController, float ____spawnPosZ, FlyingSpriteSpawner ____missedNoteFlyingSpriteSpawner)
         {
@@ -77,9 +21,8 @@ namespace DetailedMiss
         }
     }
 
-
     [HarmonyPatch(typeof(FlyingSpriteSpawner), "SpawnFlyingSprite")]
-    public class FlyingSpriteSpawner_SpawnFlyingSprite_Patch
+    internal class FlyingSpriteSpawner_SpawnFlyingSprite_Patch
     {
         public static bool Prefix(Vector3 pos, Quaternion rotation, Quaternion inverseRotation, FlyingSpriteSpawner __instance, FlyingSpriteEffect.Pool ____flyingSpriteEffectPool, float ____xSpread, float ____targetYPos, float ____targetZPos, float ____duration, Sprite ____sprite, Material ____material, Color ____color, bool ____shake)
         {
@@ -93,29 +36,30 @@ namespace DetailedMiss
             {
                 myColor = MyColors.ColorA;
             }
-            else if(inverseRotation == Quaternion.Euler(Vector3.back))
+            else if (inverseRotation == Quaternion.Euler(Vector3.back))
             {
                 myColor = MyColors.ColorB;
             }
-                flyingSpriteEffect.InitAndPresent(targetPos: rotation * new Vector3(Mathf.Sign(pos.x) * ____xSpread, ____targetYPos, ____targetZPos), duration: ____duration, rotation: rotation, sprite: ____sprite, material: ____material, color: myColor, shake: ____shake);
+            flyingSpriteEffect.InitAndPresent(targetPos: rotation * new Vector3(Mathf.Sign(pos.x) * ____xSpread, ____targetYPos, ____targetZPos), duration: ____duration, rotation: rotation, sprite: ____sprite, material: ____material, color: myColor, shake: ____shake);
             return false;
         }
     }
 
     [HarmonyPatch(typeof(ColorManager), "SetColorScheme")]
-    public class ColorManager_SetColorScheme_Patch
+    internal class ColorManager_SetColorScheme_Patch
     {
         public static void Postfix(ColorScheme ____colorScheme)
         {
-            MyColors.ColorA = ____colorScheme.saberAColor;
-            MyColors.ColorB = ____colorScheme.saberBColor;
+            const float colorBoost = 0.7f;
+            MyColors.ColorA = new Color(Mathf.Pow(____colorScheme.saberAColor.r, colorBoost), Mathf.Pow(____colorScheme.saberAColor.g, colorBoost), Mathf.Pow(____colorScheme.saberAColor.b, colorBoost));
+            MyColors.ColorB = new Color(Mathf.Pow(____colorScheme.saberBColor.r, colorBoost), Mathf.Pow(____colorScheme.saberBColor.g, colorBoost), Mathf.Pow(____colorScheme.saberBColor.b, colorBoost));
         }
     }
 
-
-    public static class MyColors
+    internal static class MyColors
     {
         public static Color ColorA;
         public static Color ColorB;
     }
 }
+
