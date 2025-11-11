@@ -15,7 +15,27 @@ namespace ColoredMiss
                 position = noteController.inverseWorldRotation * position;
                 position.z = ____spawnPosZ;
                 position = worldRotation * position;
-                ____missedNoteFlyingSpriteSpawner.SpawnFlyingSprite(position, noteController.worldRotation, noteController.noteData.colorType == ColorType.ColorA ? Quaternion.Euler(Vector3.forward) : Quaternion.Euler(Vector3.back));
+                ____missedNoteFlyingSpriteSpawner.SpawnFlyingSprite(position, noteController.worldRotation, Utils.EncodeColor(noteController.noteData.colorType));
+            }
+            return false;
+        }
+    }
+
+    [HarmonyPatch(typeof(BadNoteCutEffectSpawner), "HandleNoteWasCut")]
+    internal class BadNoteCutEffectSpawner_HandleNoteWasCut_Patch
+    {
+        public static bool Prefix(NoteController noteController, in NoteCutInfo noteCutInfo, AudioTimeSyncController ____audioTimeSyncController, FlyingSpriteSpawner ____failFlyingSpriteSpawner)
+        {
+            if (!(noteController.noteData.time + 0.5f < ____audioTimeSyncController.songTime))
+            {
+                if (noteController.noteData.colorType == ColorType.None)
+                {
+                    ____failFlyingSpriteSpawner.SpawnFlyingSprite(noteCutInfo.cutPoint, noteController.worldRotation, noteController.inverseWorldRotation);
+                }
+                else if (!noteCutInfo.allIsOK)
+                {
+                    ____failFlyingSpriteSpawner.SpawnFlyingSprite(noteCutInfo.cutPoint, noteController.worldRotation, Utils.EncodeColor(noteController.noteData.colorType));
+                }
             }
             return false;
         }
@@ -31,16 +51,10 @@ namespace ColoredMiss
             flyingSpriteEffect.transform.localPosition = pos;
             pos = Quaternion.Inverse(rotation) * pos;
 
-            Color myColor = Color.white;
-            if (inverseRotation == Quaternion.Euler(Vector3.forward))
-            {
-                myColor = MyColors.ColorA;
-            }
-            else if (inverseRotation == Quaternion.Euler(Vector3.back))
-            {
-                myColor = MyColors.ColorB;
-            }
-            flyingSpriteEffect.InitAndPresent(targetPos: rotation * new Vector3(Mathf.Sign(pos.x) * ____xSpread, ____targetYPos, ____targetZPos), duration: ____duration, rotation: rotation, sprite: ____sprite, material: ____material, color: myColor, shake: ____shake);
+            Color? myColor = Utils.DecodeColor(inverseRotation);
+            Color finalColor = myColor ?? ____color;
+
+            flyingSpriteEffect.InitAndPresent(targetPos: rotation * new Vector3(Mathf.Sign(pos.x) * ____xSpread, ____targetYPos, ____targetZPos), duration: ____duration, rotation: rotation, sprite: ____sprite, material: ____material, color: finalColor, shake: ____shake);
             return false;
         }
     }
@@ -51,15 +65,41 @@ namespace ColoredMiss
         public static void Postfix(ColorScheme ____colorScheme)
         {
             const float colorBoost = 0.7f;
-            MyColors.ColorA = new Color(Mathf.Pow(____colorScheme.saberAColor.r, colorBoost), Mathf.Pow(____colorScheme.saberAColor.g, colorBoost), Mathf.Pow(____colorScheme.saberAColor.b, colorBoost));
-            MyColors.ColorB = new Color(Mathf.Pow(____colorScheme.saberBColor.r, colorBoost), Mathf.Pow(____colorScheme.saberBColor.g, colorBoost), Mathf.Pow(____colorScheme.saberBColor.b, colorBoost));
+            Utils.ColorA = new Color(Mathf.Pow(____colorScheme.saberAColor.r, colorBoost), Mathf.Pow(____colorScheme.saberAColor.g, colorBoost), Mathf.Pow(____colorScheme.saberAColor.b, colorBoost));
+            Utils.ColorB = new Color(Mathf.Pow(____colorScheme.saberBColor.r, colorBoost), Mathf.Pow(____colorScheme.saberBColor.g, colorBoost), Mathf.Pow(____colorScheme.saberBColor.b, colorBoost));
         }
     }
 
-    internal static class MyColors
+    internal static class Utils
     {
         public static Color ColorA;
         public static Color ColorB;
+
+        public static Quaternion EncodeColor(ColorType colorType)
+        {
+            if (colorType == ColorType.ColorA)
+            {
+                return Quaternion.Euler(Vector3.forward);
+            }
+            else if (colorType == ColorType.ColorB)
+            {
+                return Quaternion.Euler(Vector3.back);
+            }
+            return Quaternion.identity;
+        }
+
+        public static Color? DecodeColor(Quaternion rotation)
+        {
+            if(rotation == Quaternion.Euler(Vector3.forward))
+            {
+                return ColorA;
+            }
+            else if (rotation == Quaternion.Euler(Vector3.back))
+            {
+                return ColorB;
+            }
+            return null;
+        }
     }
 }
 

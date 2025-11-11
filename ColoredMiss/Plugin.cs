@@ -40,7 +40,6 @@ namespace ColoredMiss
         [OnStart]
         public void OnApplicationStart()
         {
-            Log.Debug("ColoredMiss-OnApplicationStart");
             harmony.PatchAll(executingAssembly);
 
         }
